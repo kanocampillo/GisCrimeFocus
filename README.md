@@ -26,7 +26,7 @@ Give the example
 
 ## Autor
 
-* **Carlos Mario Cano ** - *Initial work* - [PurpleBooth](https://github.com/kanocampillo)
+* **Carlos Mario Cano Campillo ** - *Initial work* - [PurpleBooth](https://github.com/kanocampillo)
 
 ## License
 
