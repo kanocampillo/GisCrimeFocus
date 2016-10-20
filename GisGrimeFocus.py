@@ -48,7 +48,8 @@ class GisGrimeFocus:
         """
 
         """ here the global variables"""
-        self.ruta_salida="X://"
+        self.ruta_salida = ""
+        self.years = []
 
 
         # Save reference to the QGIS interface
@@ -171,13 +172,20 @@ class GisGrimeFocus:
         # funcion que guarda la ruta del archivo de salida en el text
         # correspondiente
         self.dlg.pBSearchFile.clicked.connect(self.readInputData)
-        self.dlg.pb_calcular_radio.clicked.connect(self.calcradio)
-        self.dlg.pb_calc_kernel.clicked.connect(self.kernelgausiano)
+        self.dlg.pb_calcular_radio.clicked.connect(self.calc_radio)
+        self.dlg.pb_calc_kernel.clicked.connect(self.kernel_gausiano)
 
         #funcionque conecta al boton con la funcion de convertir el scv en shape
         #  y cargarlo
-        self.dlg.pBImport.clicked.connect(self.csvtoShape2)
-        self.dlg.pb_exportByYear.clicked.connect(self.exportByDate)
+        self.dlg.pBImport.clicked.connect(self.csv_to_shape)
+        self.dlg.pb_exportByYear.clicked.connect(self.export_by_date)
+        self.dlg.mcb_lista_csv.layerChanged.connect(self.load_fields)
+
+
+        self.dlg.pushButton.clicked.connect(self.get_years_values)
+
+
+
 
 
 
@@ -197,6 +205,7 @@ class GisGrimeFocus:
         """ se fijan los filtros de los combos """
         # el filtro de NoGeometry
         self.dlg.mcb_lista_csv.setFilters(QgsMapLayerProxyModel.NoGeometry)
+        self.load_fields()  # set the current layer  and load the fields
 
 
     def unload(self):
@@ -225,33 +234,36 @@ class GisGrimeFocus:
     def readInputData(self):
 
         #abre el dialog para guardar el shape de salida
-        file = QFileDialog.getOpenFileName(self.dlg, 'Archivo shape de salida' \
-        ,'', filter='*.csv')
+##        file = QFileDialog.getOpenFileName(self.dlg, 'Archivo shape de salida' \
+##        ,'', filter='*.csv')
+##
+##        file = QFileDialog.getExistingDirectory(self.dlg, 'Working Path' \
+##                ,'', filter='*.csv')
+
+        file = QFileDialog.getExistingDirectory(self.dlg,
+         "Choose Or Create Directory","C:\\",
+         QFileDialog.DontResolveSymlinks | QFileDialog.ReadOnly);
         self.dlg.lEIfile.setText(file)
+        self.ruta_salida=self.dlg.lEIfile.text()  # set the workspace
 
     def csvtoShape(self):
-        fileRoute=self.dlg.lEIfile.text()
+        fileRoute = self.dlg.lEIfile.text()
         uri = "file:///"+fileRoute+ \
         "?delimiter=%s&crs=epsg:4326&xField=%s&yField=%s" % (";", "X", "Y")
         lyr = QgsVectorLayer(uri, 'New CSV','delimitedtext')
         QgsMapLayerRegistry.instance().addMapLayer(lyr)
         QMessageBox.information(self.dlg, "Error", fileRoute)
 
-    def csvtoShape2(self):
-         capa_csv= self.dlg.mcb_lista_csv.currentLayer()
-         pvr =capa_csv.dataProvider()
-         ruta_capa=pvr.dataSourceUri().split("|")[0]
-         ruta_exporta=self.ruta_salida
+    def csv_to_shape(self):
+         capa_csv = self.dlg.mcb_lista_csv.currentLayer()
+         pvr = capa_csv.dataProvider()
+         ruta_capa = pvr.dataSourceUri().split("|")[0]
+         ruta_exporta = self.ruta_salida
          uri = "file:///"+ruta_capa+ \
          "?delimiter=%s&crs=epsg:4326&xField=%s&yField=%s" % (";", "x", "y")
          lyr_capa_csv = QgsVectorLayer(uri, 'Delitosx','delimitedtext')
-##         QgsMapLayerRegistry.instance().addMapLayer(lyr_capa_csv)
-         print "hola"
-
-##         lyr_capa_csv = QgsVectorLayer(ruta_capa, "Museums",
-##         "ogr")
-##         self.layerTomemory(ruta_capa, "ggg")
          self.exporta_capa(lyr_capa_csv,ruta_exporta) # funciona exporta a shape
+         print "hola"
 
     def exporta_capa(self,capa,ruta_wokspace):# esta funcion convierte un layer visrtual en un shape en un directoriuo dado
         dest_crs = QgsCoordinateReferenceSystem(3116)
@@ -269,7 +281,7 @@ class GisGrimeFocus:
 ##        QgsMapLayerRegistry.instance().addMapLayer(lyr)
 
 
-    def calcradio(self):
+    def calc_radio(self):
         distancias=[]
         pointlayer = self.iface.activeLayer()
         provider = pointlayer.dataProvider()
@@ -296,23 +308,23 @@ class GisGrimeFocus:
             distancias.append(m)
         print "el promedio de las distancias es : %s m" %(str(sum(distancias)/len(distancias)))
 
-    def kernelgausiano(self):
+    def kernel_gausiano(self):
         layer=self.iface.activeLayer()
-        ruta=self.layerpath()
-        extent=self.getextent()
+        ruta=self.layer_path()
+        extent=self.get_extent()
         processing.runalg("saga:kerneldensityestimation",ruta,"Delito",300,1,extent,100,self.ruta_salida+layer.name()+".tif")
         rasterLyr = QgsRasterLayer(self.ruta_salida+layer.name()+".tif", "Ker_"+layer.name())
         QgsMapLayerRegistry.instance().addMapLayers([rasterLyr])
 
 ##        self.getextent()
 
-    def layerpath(self):
-        layer=self.iface.activeLayer()
-        pvr =layer.dataProvider()
-        layerpath=pvr.dataSourceUri().split("|")[0]
+    def layer_path(self):
+        layer = self.iface.activeLayer()
+        pvr = layer.dataProvider()
+        layer_path = pvr.dataSourceUri().split("|")[0]
         return layerpath
 
-    def getextent(self):
+    def get_extent(self):
         layer=self.iface.activeLayer()
         e = layer.extent()
         xmin=str(e.xMinimum())
@@ -322,7 +334,7 @@ class GisGrimeFocus:
         extent=str(xmin+","+xmax+","+ymin+","+ymax)
         return extent
 
-    def exportByDate(self):
+    def export_by_date(self):
         anios=["2010","2011","2012","2013"]
         layer=self.iface.activeLayer()
         ruta_exporta=self.ruta_salida
@@ -350,6 +362,58 @@ class GisGrimeFocus:
         layer_virtual.updateExtents()
         return layer_virtual # devuelve el layer virtual
 
+    def list_years(self):
+        try:
+            #captura el layer activo
+            layer=self.iface.activeLayer()
+            if layer:
+
+                n_capa=self.iface.activeLayer().name()
+                self.dlg.text_capa_activa.setText(n_capa)
+                if layer.type() == QgsMapLayer.VectorLayer:  # verifica si es vectorial y el tipo de geometria
+                    #captura las features
+                    fea=layer.getFeatures()
+                    for featurex in fea:
+                        attributos=featurex.attributes()
+##                    num_atributos=len(attributos)
+##                    self.dlg.text_numatt.setText(str(num_atributos))
+                else:
+                    QMessageBox.information(self.dlg, "Error", "El layer no es vectorial")
+        except:
+            QMessageBox.information(self.dlg, "Error", "Por favor cargue por lo menos una capa vectorial")
+
+    def load_fields(self):# funci{on que cambias los atributos al cambiar de layer
+        layer= self.dlg.mcb_lista_csv.currentLayer ()
+        self.dlg.mfcb_fields.setLayer(layer)
+
+    def get_years_values(self):# llena el combo con los valores del atributo seleccionado
+        layer=self.dlg.mcb_lista_csv.currentLayer()
+        field=self.dlg.mfcb_fields.currentField()
+        all_values = []
+        uniq_values = []
+        features= layer.getFeatures()
+        for feature in features:
+            all_values.append(feature[field])
+        uniq_values=self.uniq(all_values)
+        uniq_values.sort() # para que la lista salga en orden
+        print uniq_values
+
+
+    def uniq(self,inlist): # funcion que devuelve los valores unicos en una lista
+        # preservando el orden
+        uniques = []
+        for item in inlist:
+            if item not in uniques:
+                uniques.append(item)
+        return uniques
+
+
+
+
+
+
+##        for a in uniq_values:
+##            self.dlg.cBValues.addItem(str(a))
 ##        distancias=[]
 ##        distancias_minimas=[]
 ##        mapa = self.iface.mapCanvas()
