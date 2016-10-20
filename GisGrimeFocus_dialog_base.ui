@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>576</width>
-    <height>353</height>
+    <width>400</width>
+    <height>294</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -52,8 +52,8 @@
   <widget class="QPushButton" name="pBExit">
    <property name="geometry">
     <rect>
-     <x>340</x>
-     <y>280</y>
+     <x>120</x>
+     <y>250</y>
      <width>75</width>
      <height>23</height>
     </rect>
@@ -65,8 +65,8 @@
   <widget class="QPushButton" name="pBImport">
    <property name="geometry">
     <rect>
-     <x>310</x>
-     <y>220</y>
+     <x>30</x>
+     <y>250</y>
      <width>75</width>
      <height>23</height>
     </rect>
@@ -101,8 +101,8 @@
   <widget class="QPushButton" name="pb_calcular_radio">
    <property name="geometry">
     <rect>
-     <x>400</x>
-     <y>180</y>
+     <x>280</x>
+     <y>190</y>
      <width>75</width>
      <height>23</height>
     </rect>
@@ -114,8 +114,8 @@
   <widget class="QPushButton" name="pb_calc_kernel">
    <property name="geometry">
     <rect>
-     <x>400</x>
-     <y>210</y>
+     <x>280</x>
+     <y>220</y>
      <width>75</width>
      <height>23</height>
     </rect>
@@ -127,8 +127,8 @@
   <widget class="QPushButton" name="pb_exportByYear">
    <property name="geometry">
     <rect>
-     <x>390</x>
-     <y>150</y>
+     <x>270</x>
+     <y>160</y>
      <width>111</width>
      <height>23</height>
     </rect>
@@ -163,8 +163,8 @@
   <widget class="QPushButton" name="pushButton">
    <property name="geometry">
     <rect>
-     <x>390</x>
-     <y>110</y>
+     <x>270</x>
+     <y>120</y>
      <width>75</width>
      <height>23</height>
     </rect>

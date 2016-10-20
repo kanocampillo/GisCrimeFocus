@@ -287,9 +287,9 @@ class GisGrimeFocus:
 ##        QgsMapLayerRegistry.instance().addMapLayer(lyr)
 
 
-    def calc_radio(self):
+    def calc_radio(self,layer):
         distances=[]
-        pointlayer = self.iface.activeLayer()
+        pointlayer = layer
         provider = pointlayer.dataProvider()
 
         spIndex = QgsSpatialIndex() #create spatial index object
@@ -312,22 +312,31 @@ class GisGrimeFocus:
             d = QgsDistanceArea()
             m = d.measureLine(pt,ftr.geometry().asPoint())
             distances.append(m)
-        print "el promedio de las distancias es : %s m" %(str(sum(distances)/len(distances)))
+        return self.pstdev(distances) ,self.mean(distances)
+
+##        print "el promedio de las distancias es : %s m" %(str(sum(distances)/len(distances)))
 
     def kernel_gausiano(self):
-        layer=self.iface.activeLayer()
-        ruta=self.layer_path()
-        extent=self.get_extent()
-        processing.runalg("saga:kerneldensityestimation",ruta,"Delito",300,1,extent,100,self.ruta_salida+layer.name()+".tif")
-        rasterLyr = QgsRasterLayer(self.ruta_salida+layer.name()+".tif", "Ker_"+layer.name())
-        QgsMapLayerRegistry.instance().addMapLayers([rasterLyr])
+        year_count = len(self.years_layers)
+        for i in range(year_count):
+
+            layer = self.years_layers[i]
+            sd,avr = self.calc_radio(layer)
+##            print layer.name() , str(avr) , str(sd)
+            radio =avr + 2*sd
+            print radio
+            cell_size = 100
+            ruta = self.layer_path(layer)
+            extent = self.get_extent()
+            processing.runalg("saga:kerneldensityestimation",ruta,"Delito",radio,1,extent,cell_size,self.ruta_salida+layer.name()+".tif")
+            rasterLyr = QgsRasterLayer(self.ruta_salida+layer.name()+".tif", "Ker_"+layer.name())
+            QgsMapLayerRegistry.instance().addMapLayers([rasterLyr])
 ##        self.getextent()
 
-    def layer_path(self):
-        layer = self.iface.activeLayer()
+    def layer_path(self,layer):
         pvr = layer.dataProvider()
         layer_path = pvr.dataSourceUri().split("|")[0]
-        return layerpath
+        return layer_path
 
     def get_extent(self):
         layer=self.iface.activeLayer()
@@ -395,10 +404,34 @@ class GisGrimeFocus:
                 uniques.append(item)
         return uniques
 
+
+    def mean(self,data):
+        """Return the sample arithmetic mean of data."""
+        n = len(data)
+        if n < 1:
+            raise ValueError('mean requires at least one data point')
+        return sum(data)/n # in Python 2 use sum(data)/float(n)
+
+
+    def _ss(self,data):
+        """Return sum of square deviations of sequence data."""
+        c = self.mean(data)
+        ss = sum((x-c)**2 for x in data)
+        return ss
+
+    def pstdev(self,data):
+        """Calculates the population standard deviation."""
+        n = len(data)
+        if n < 2:
+                raise ValueError('variance requires at least two data points')
+        ss = self._ss(data)
+        pvar = ss/n # the population variance
+        return pvar**0.5
+
     def main(self):
         self.csv_to_shape()  # import the csvfile stores it and export to shp
         self.export_by_date()  # export a shp for every year
-        print self.years_layers
+        self.kernel_gausiano()
 ##        sef.calc_radio()
 
 
