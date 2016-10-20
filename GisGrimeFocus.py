@@ -50,7 +50,11 @@ class GisGrimeFocus:
         """ here the global variables"""
         self.ruta_salida = ""
         self.years = []
-        self.imported_layer=""
+        self.imported_layer = ""
+        self.years_layers =[]
+        self.crime_distances = []
+        self.crime_sd = []
+        self.crime_radios = []
 
 
         # Save reference to the QGIS interface
@@ -264,10 +268,10 @@ class GisGrimeFocus:
          uri = "file:///"+ruta_capa+ \
          "?delimiter=%s&crs=epsg:4326&xField=%s&yField=%s" % (";", "x", "y")
          lyr_capa_csv = QgsVectorLayer(uri, 'Delitosx','delimitedtext')
-         self.imported_layer = self.exporta_capa(lyr_capa_csv,ruta_exporta) # funciona exporta a shape
+         self.imported_layer = self.layer_export(lyr_capa_csv,ruta_exporta) # funciona exporta a shape
          print "hola"
 
-    def exporta_capa(self,capa,ruta_wokspace):# esta funcion convierte un layer visrtual en un shape en un directoriuo dado
+    def layer_export(self,capa,ruta_wokspace):# esta funcion convierte un layer visrtual en un shape en un directoriuo dado
         dest_crs = QgsCoordinateReferenceSystem(3116)
         QgsVectorFileWriter.writeAsVectorFormat(capa,ruta_wokspace+"\\"+capa.name()+".shp", "utf-8", dest_crs, "ESRI Shapefile")
         capa_shape = QgsVectorLayer(ruta_wokspace+"\\"+capa.name()+".shp", capa.name() ,"ogr")
@@ -284,7 +288,7 @@ class GisGrimeFocus:
 
 
     def calc_radio(self):
-        distancias=[]
+        distances=[]
         pointlayer = self.iface.activeLayer()
         provider = pointlayer.dataProvider()
 
@@ -307,8 +311,8 @@ class GisGrimeFocus:
             fit2.nextFeature(ftr)
             d = QgsDistanceArea()
             m = d.measureLine(pt,ftr.geometry().asPoint())
-            distancias.append(m)
-        print "el promedio de las distancias es : %s m" %(str(sum(distancias)/len(distancias)))
+            distances.append(m)
+        print "el promedio de las distancias es : %s m" %(str(sum(distances)/len(distances)))
 
     def kernel_gausiano(self):
         layer=self.iface.activeLayer()
@@ -317,7 +321,6 @@ class GisGrimeFocus:
         processing.runalg("saga:kerneldensityestimation",ruta,"Delito",300,1,extent,100,self.ruta_salida+layer.name()+".tif")
         rasterLyr = QgsRasterLayer(self.ruta_salida+layer.name()+".tif", "Ker_"+layer.name())
         QgsMapLayerRegistry.instance().addMapLayers([rasterLyr])
-
 ##        self.getextent()
 
     def layer_path(self):
@@ -344,11 +347,11 @@ class GisGrimeFocus:
         layer = self.imported_layer
         ruta_exporta = self.ruta_salida
         for an in anios:
-            layer_anio = self.exporta_features(layer,"PERIODO",an)
-            self.exporta_capa(layer_anio,ruta_exporta)
+            layer_anio = self.feature_export(layer,"PERIODO",an)
+            self.years_layers.append(self.layer_export(layer_anio,ruta_exporta))
             del layer_anio
 
-    def exporta_features(self,layer_origen,campo,dato):
+    def feature_export(self,layer_origen,campo,dato):
         #captura el sistema de coordenadas del primer layer que este cargado en el qgis
         layers = self.iface.legendInterface().layers()
         coord_layer = layers[0].crs()
@@ -366,26 +369,6 @@ class GisGrimeFocus:
         layer_virtual.updateFields()
         layer_virtual.updateExtents()
         return layer_virtual # devuelve el layer virtual
-
-    def list_years(self):
-        try:
-            #captura el layer activo
-            layer=self.iface.activeLayer()
-            if layer:
-
-                n_capa=self.iface.activeLayer().name()
-                self.dlg.text_capa_activa.setText(n_capa)
-                if layer.type() == QgsMapLayer.VectorLayer:  # verifica si es vectorial y el tipo de geometria
-                    #captura las features
-                    fea=layer.getFeatures()
-                    for featurex in fea:
-                        attributos=featurex.attributes()
-##                    num_atributos=len(attributos)
-##                    self.dlg.text_numatt.setText(str(num_atributos))
-                else:
-                    QMessageBox.information(self.dlg, "Error", "El layer no es vectorial")
-        except:
-            QMessageBox.information(self.dlg, "Error", "Por favor cargue por lo menos una capa vectorial")
 
     def load_fields(self):# funci{on que cambias los atributos al cambiar de layer
         layer= self.dlg.mcb_lista_csv.currentLayer ()
@@ -413,8 +396,11 @@ class GisGrimeFocus:
         return uniques
 
     def main(self):
-        self.csv_to_shape()
-        self.export_by_date()
+        self.csv_to_shape()  # import the csvfile stores it and export to shp
+        self.export_by_date()  # export a shp for every year
+        print self.years_layers
+##        sef.calc_radio()
+
 
     if __name__ == '__main__':
         main()
