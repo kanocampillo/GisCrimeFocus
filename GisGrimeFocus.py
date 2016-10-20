@@ -50,6 +50,7 @@ class GisGrimeFocus:
         """ here the global variables"""
         self.ruta_salida = ""
         self.years = []
+        self.imported_layer=""
 
 
         # Save reference to the QGIS interface
@@ -177,7 +178,8 @@ class GisGrimeFocus:
 
         #funcionque conecta al boton con la funcion de convertir el scv en shape
         #  y cargarlo
-        self.dlg.pBImport.clicked.connect(self.csv_to_shape)
+##        self.dlg.pBImport.clicked.connect(self.csv_to_shape)
+        self.dlg.pBImport.clicked.connect(self.main)
         self.dlg.pb_exportByYear.clicked.connect(self.export_by_date)
         self.dlg.mcb_lista_csv.layerChanged.connect(self.load_fields)
 
@@ -262,7 +264,7 @@ class GisGrimeFocus:
          uri = "file:///"+ruta_capa+ \
          "?delimiter=%s&crs=epsg:4326&xField=%s&yField=%s" % (";", "x", "y")
          lyr_capa_csv = QgsVectorLayer(uri, 'Delitosx','delimitedtext')
-         self.exporta_capa(lyr_capa_csv,ruta_exporta) # funciona exporta a shape
+         self.imported_layer = self.exporta_capa(lyr_capa_csv,ruta_exporta) # funciona exporta a shape
          print "hola"
 
     def exporta_capa(self,capa,ruta_wokspace):# esta funcion convierte un layer visrtual en un shape en un directoriuo dado
@@ -335,11 +337,14 @@ class GisGrimeFocus:
         return extent
 
     def export_by_date(self):
-        anios=["2010","2011","2012","2013"]
-        layer=self.iface.activeLayer()
-        ruta_exporta=self.ruta_salida
+        self.years = self.get_years_values()
+##        anios=["2010","2011","2012","2013"]
+        anios=self.years
+##        layer=self.iface.activeLayer()
+        layer = self.imported_layer
+        ruta_exporta = self.ruta_salida
         for an in anios:
-            layer_anio=self.exporta_features(layer,"PERIODO",an)
+            layer_anio = self.exporta_features(layer,"PERIODO",an)
             self.exporta_capa(layer_anio,ruta_exporta)
             del layer_anio
 
@@ -396,7 +401,7 @@ class GisGrimeFocus:
             all_values.append(feature[field])
         uniq_values=self.uniq(all_values)
         uniq_values.sort() # para que la lista salga en orden
-        print uniq_values
+        return uniq_values
 
 
     def uniq(self,inlist): # funcion que devuelve los valores unicos en una lista
@@ -407,6 +412,12 @@ class GisGrimeFocus:
                 uniques.append(item)
         return uniques
 
+    def main(self):
+        self.csv_to_shape()
+        self.export_by_date()
+
+    if __name__ == '__main__':
+        main()
 
 
 
