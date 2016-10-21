@@ -177,18 +177,15 @@ class GisGrimeFocus:
         # funcion que guarda la ruta del archivo de salida en el text
         # correspondiente
         self.dlg.pBSearchFile.clicked.connect(self.readInputData)
-        self.dlg.pb_calcular_radio.clicked.connect(self.calc_radio)
-        self.dlg.pb_calc_kernel.clicked.connect(self.kernel_gausiano)
 
         #funcionque conecta al boton con la funcion de convertir el scv en shape
         #  y cargarlo
 ##        self.dlg.pBImport.clicked.connect(self.csv_to_shape)
         self.dlg.pBImport.clicked.connect(self.main)
-        self.dlg.pb_exportByYear.clicked.connect(self.export_by_date)
+
         self.dlg.mcb_lista_csv.layerChanged.connect(self.load_fields)
 
 
-        self.dlg.pushButton.clicked.connect(self.get_years_values)
 
 
 
