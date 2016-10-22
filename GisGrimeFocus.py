@@ -174,6 +174,8 @@ class GisGrimeFocus:
 
         self.actions.append(action)
         ###########aca las conexiones a los botones############################
+        # set the default crs system
+        dest_crs =self.dlg.mpsw_crs.setCrs(QgsCoordinateReferenceSystem(3116))
         # funcion que guarda la ruta del archivo de salida en el text
         # correspondiente
         self.dlg.pBSearchFile.clicked.connect(self.readInputData)
@@ -185,10 +187,9 @@ class GisGrimeFocus:
 
         self.dlg.mcb_lista_csv.layerChanged.connect(self.load_fields)
 
-
-
-
-
+        # funcion que habilita el radio buton de numero de features al seleccionar
+        # el cuadro de cifras
+        self.dlg.dsb_bandwith.valueChanged.connect(self.radio_custom_click)
 
 
 
@@ -249,14 +250,6 @@ class GisGrimeFocus:
         self.dlg.lEIfile.setText(file)
         self.ruta_salida=self.dlg.lEIfile.text()  # set the workspace
 
-    def csvtoShape(self):
-        fileRoute = self.dlg.lEIfile.text()
-        uri = "file:///"+fileRoute+ \
-        "?delimiter=%s&crs=epsg:4326&xField=%s&yField=%s" % (";", "X", "Y")
-        lyr = QgsVectorLayer(uri, 'New CSV','delimitedtext')
-        QgsMapLayerRegistry.instance().addMapLayer(lyr)
-        QMessageBox.information(self.dlg, "Error", fileRoute)
-
     def csv_to_shape(self):
          capa_csv = self.dlg.mcb_lista_csv.currentLayer()
          pvr = capa_csv.dataProvider()
@@ -269,7 +262,8 @@ class GisGrimeFocus:
          print "hola"
 
     def layer_export(self,capa,ruta_wokspace):# esta funcion convierte un layer visrtual en un shape en un directoriuo dado
-        dest_crs = QgsCoordinateReferenceSystem(3116)
+##        dest_crs = QgsCoordinateReferenceSystem(3116)setCrs
+        dest_crs =self.dlg.mpsw_crs.crs ()
         QgsVectorFileWriter.writeAsVectorFormat(capa,ruta_wokspace+"\\"+capa.name()+".shp", "utf-8", dest_crs, "ESRI Shapefile")
         capa_shape = QgsVectorLayer(ruta_wokspace+"\\"+capa.name()+".shp", capa.name() ,"ogr")
         capa.commitChanges()
@@ -320,9 +314,12 @@ class GisGrimeFocus:
             layer = self.years_layers[i]
             sd,avr = self.calc_radio(layer)
 ##            print layer.name() , str(avr) , str(sd)
-            radio =avr + 2*sd
+            if self.dlg.rb_default_bw.isChecked() is True:
+                radio =avr + 2*sd
+            else:
+                radio =self.dlg.dsb_bandwith.value()
             print radio
-            cell_size = 100
+            cell_size = self.dlg.dsb_cellsize.value()
             ruta = self.layer_path(layer)
             extent = self.get_extent()
             processing.runalg("saga:kerneldensityestimation",ruta,"Delito",radio,1,extent,cell_size,self.ruta_salida+layer.name()+".tif")
@@ -425,11 +422,19 @@ class GisGrimeFocus:
         pvar = ss/n # the population variance
         return pvar**0.5
 
+    def radio_custom_click(self):
+        #activa el radio button de la seleccion aleatoria por numero de elementos al cambiar los valores del spinbox
+        self.dlg.rb_custom_bw.toggle()
+
+    def weighted_sum(self):
+        pass
+
     def main(self):
         self.csv_to_shape()  # import the csvfile stores it and export to shp
         self.export_by_date()  # export a shp for every year
         self.kernel_gausiano()
 ##        sef.calc_radio()
+
 
 
     if __name__ == '__main__':

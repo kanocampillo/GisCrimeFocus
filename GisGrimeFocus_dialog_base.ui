@@ -6,120 +6,318 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>295</width>
-    <height>294</height>
+    <width>425</width>
+    <height>423</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>GisGrimeFocus</string>
   </property>
-  <widget class="QLineEdit" name="lEIfile">
-   <property name="geometry">
-    <rect>
-     <x>30</x>
-     <y>60</y>
-     <width>211</width>
-     <height>20</height>
-    </rect>
-   </property>
-  </widget>
-  <widget class="QLabel" name="lbl_wk">
-   <property name="geometry">
-    <rect>
-     <x>30</x>
-     <y>40</y>
-     <width>191</width>
-     <height>16</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Select the Workspace:</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="pBSearchFile">
-   <property name="geometry">
-    <rect>
-     <x>250</x>
-     <y>60</y>
-     <width>21</width>
-     <height>23</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>...</string>
-   </property>
-  </widget>
   <widget class="QPushButton" name="pBExit">
    <property name="geometry">
     <rect>
-     <x>120</x>
-     <y>250</y>
+     <x>270</x>
+     <y>370</y>
      <width>75</width>
      <height>23</height>
     </rect>
    </property>
+   <property name="toolTip">
+    <string>Cierra la ventana</string>
+   </property>
    <property name="text">
-    <string>Exit</string>
+    <string>Salir</string>
    </property>
   </widget>
   <widget class="QPushButton" name="pBImport">
    <property name="geometry">
     <rect>
-     <x>30</x>
-     <y>250</y>
+     <x>90</x>
+     <y>370</y>
      <width>75</width>
      <height>23</height>
     </rect>
    </property>
-   <property name="text">
-    <string>Import</string>
-   </property>
-  </widget>
-  <widget class="QgsMapLayerComboBox" name="mcb_lista_csv">
-   <property name="geometry">
-    <rect>
-     <x>30</x>
-     <y>120</y>
-     <width>211</width>
-     <height>27</height>
-    </rect>
-   </property>
-  </widget>
-  <widget class="QLabel" name="lbl_lyr">
-   <property name="geometry">
-    <rect>
-     <x>30</x>
-     <y>90</y>
-     <width>91</width>
-     <height>16</height>
-    </rect>
+   <property name="toolTip">
+    <string>Realiza la ejecución del proceso</string>
    </property>
    <property name="text">
-    <string>Select the csv file:</string>
+    <string>Ejecutar</string>
    </property>
   </widget>
-  <widget class="QLabel" name="lbl_year_field">
+  <widget class="QPushButton" name="pb_clean">
    <property name="geometry">
     <rect>
-     <x>30</x>
-     <y>160</y>
-     <width>121</width>
-     <height>16</height>
+     <x>180</x>
+     <y>370</y>
+     <width>75</width>
+     <height>23</height>
     </rect>
+   </property>
+   <property name="toolTip">
+    <string>Devuelve el formulario a sus valores por defecto</string>
    </property>
    <property name="text">
-    <string>Select the years field:</string>
+    <string>Limpiar</string>
    </property>
   </widget>
-  <widget class="QgsFieldComboBox" name="mfcb_fields">
+  <widget class="QGroupBox" name="gb_input_data">
    <property name="geometry">
     <rect>
-     <x>30</x>
-     <y>190</y>
-     <width>211</width>
-     <height>27</height>
+     <x>20</x>
+     <y>20</y>
+     <width>381</width>
+     <height>161</height>
     </rect>
    </property>
+   <property name="title">
+    <string>Datos de entrada</string>
+   </property>
+   <widget class="QgsFieldComboBox" name="mfcb_fields">
+    <property name="geometry">
+     <rect>
+      <x>180</x>
+      <y>110</y>
+      <width>181</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>El campo debe ser de tipo texto y debe tener solo el año</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pBSearchFile">
+    <property name="geometry">
+     <rect>
+      <x>340</x>
+      <y>40</y>
+      <width>21</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>...</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="lEIfile">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>40</y>
+      <width>311</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Seleccione un folder donde tenga permisos de escritura</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="lbl_lyr">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>80</y>
+      <width>131</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Seleccione el archivo csv:</string>
+    </property>
+   </widget>
+   <widget class="QgsMapLayerComboBox" name="mcb_lista_csv">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>110</y>
+      <width>141</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>El archivo debe tener las coordenadas en el sistema de coordenadas 4326. Deben estar en grados decimales separados por ','</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="lbl_year_field">
+    <property name="geometry">
+     <rect>
+      <x>180</x>
+      <y>80</y>
+      <width>150</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Seleccione el atributo del año:</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="lbl_wk">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>20</y>
+      <width>191</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Seleccione el espacio de trabajo:</string>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QGroupBox" name="groupBox">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>200</y>
+     <width>381</width>
+     <height>141</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>Parámetros</string>
+   </property>
+   <widget class="QLabel" name="lbl_cellsize_2">
+    <property name="geometry">
+     <rect>
+      <x>180</x>
+      <y>73</y>
+      <width>191</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Seleccione el sistema de coordenadas:</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="lbl_cellsize">
+    <property name="geometry">
+     <rect>
+      <x>180</x>
+      <y>20</y>
+      <width>151</width>
+      <height>10</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Seleccione el tamaño de celda:</string>
+    </property>
+   </widget>
+   <widget class="QgsProjectionSelectionWidget" name="mpsw_crs" native="true">
+    <property name="geometry">
+     <rect>
+      <x>180</x>
+      <y>93</y>
+      <width>160</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>El sistema debe ser un CRS debe estar en coordenadas planas</string>
+    </property>
+   </widget>
+   <widget class="QDoubleSpinBox" name="dsb_cellsize">
+    <property name="geometry">
+     <rect>
+      <x>180</x>
+      <y>40</y>
+      <width>71</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Seleccione un tamaño de celda entre 10 y 1000 metros</string>
+    </property>
+    <property name="minimum">
+     <double>10.000000000000000</double>
+    </property>
+    <property name="maximum">
+     <double>1000.000000000000000</double>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="rb_default_bw">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>40</y>
+      <width>82</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Promedio de la distancias de separación entre delitos y dos desviaciones estandar</string>
+    </property>
+    <property name="text">
+     <string>Por defecto</string>
+    </property>
+    <property name="checked">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="rb_custom_bw">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>64</y>
+      <width>91</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Seleccione un ancho de banda entre 10 y 1000 metros</string>
+    </property>
+    <property name="text">
+     <string>Personalizado</string>
+    </property>
+   </widget>
+   <widget class="QDoubleSpinBox" name="dsb_bandwith">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>84</y>
+      <width>91</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="minimum">
+     <double>10.000000000000000</double>
+    </property>
+    <property name="maximum">
+     <double>1000.000000000000000</double>
+    </property>
+   </widget>
+   <widget class="QLabel" name="lbl_bandwidth">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>20</y>
+      <width>161</width>
+      <height>10</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Seleccione el ancho de banda:</string>
+    </property>
+   </widget>
+   <zorder>lbl_cellsize_2</zorder>
+   <zorder>pBExit</zorder>
+   <zorder>lbl_cellsize</zorder>
+   <zorder>mpsw_crs</zorder>
+   <zorder>dsb_cellsize</zorder>
+   <zorder>pBImport</zorder>
+   <zorder>rb_default_bw</zorder>
+   <zorder>rb_custom_bw</zorder>
+   <zorder>dsb_bandwith</zorder>
+   <zorder>lbl_bandwidth</zorder>
+   <zorder>pb_clean</zorder>
+   <zorder>lbl_cellsize_2</zorder>
+   <zorder>lbl_cellsize</zorder>
+   <zorder>mpsw_crs</zorder>
+   <zorder>dsb_cellsize</zorder>
+   <zorder>rb_default_bw</zorder>
+   <zorder>rb_custom_bw</zorder>
+   <zorder>dsb_bandwith</zorder>
+   <zorder>lbl_bandwidth</zorder>
   </widget>
  </widget>
  <customwidgets>
@@ -131,6 +329,11 @@
   <customwidget>
    <class>QgsMapLayerComboBox</class>
    <extends>QComboBox</extends>
+   <header>qgis.gui</header>
+  </customwidget>
+  <customwidget>
+   <class>QgsProjectionSelectionWidget</class>
+   <extends>QWidget</extends>
    <header>qgis.gui</header>
   </customwidget>
  </customwidgets>
