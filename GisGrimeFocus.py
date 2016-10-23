@@ -33,6 +33,11 @@ from PyQt4.QtGui import* # para el QMessageBox y el filedialog
 from qgis._core import * # para los obejetos de gis como el layer
 from qgis.gui import *  # para que funcione QgsMapLayerProxyModel
 from GisGrimeFocus_dialog import GisGrimeFocusDialog
+# needed for raster calculator
+from qgis.analysis import QgsRasterCalculator, QgsRasterCalculatorEntry
+from math import *  # needed for operations in raster calculator
+import gistfile1 as jenks  # imports the module for do the jenks class splits
+#  obtained from https://gist.github.com/drewda/1299198
 
 
 class GisGrimeFocus:
@@ -52,6 +57,9 @@ class GisGrimeFocus:
         self.years = []
         self.imported_layer = ""
         self.years_layers =[]
+        self.raster_years_layers =[]
+        self.raster_layer_ws=""
+        self.vectorized_sum = ""
         self.crime_distances = []
         self.crime_sd = []
         self.crime_radios = []
@@ -324,6 +332,7 @@ class GisGrimeFocus:
             extent = self.get_extent()
             processing.runalg("saga:kerneldensityestimation",ruta,"Delito",radio,1,extent,cell_size,self.ruta_salida+layer.name()+".tif")
             rasterLyr = QgsRasterLayer(self.ruta_salida+layer.name()+".tif", "Ker_"+layer.name())
+            self.raster_years_layers.append(rasterLyr)
             QgsMapLayerRegistry.instance().addMapLayers([rasterLyr])
 ##        self.getextent()
 
@@ -426,13 +435,58 @@ class GisGrimeFocus:
         #activa el radio button de la seleccion aleatoria por numero de elementos al cambiar los valores del spinbox
         self.dlg.rb_custom_bw.toggle()
 
-    def weighted_sum(self):
+    def get_natural_breaks():
         pass
+
+    def weighted_sum(self):
+        entries = []  # stores the enties for the rascalc operation
+        instruccions=""
+        numbers=[x for x in xrange(0,100)]
+        numrasters = len(self.raster_years_layers)
+        factor =[1 - 0.2* x for x in xrange(0,numrasters)]
+        factor.sort()
+        items= ['(layer%s@1)'%(str(x)) for x in xrange(1,numrasters+1)]
+        sum_op = [items[x]+"*"+str(factor[x]) for x in xrange(0,len(factor))]
+        expresion = " + ".join(sum_op)
+
+        for x in xrange(1,numrasters+1):
+            instruccions+='layer%s = QgsRasterCalculatorEntry();'%(str(x))
+            instruccions+="layer%s.ref = 'layer%s@1';"%(str(x),str(x))
+            instruccions+='layer%s.raster = self.raster_years_layers[%d];'%(str(x),x-1)
+            instruccions+='layer%s.bandNumber = 1;'%(str(x))
+            if x==numrasters:
+                instruccions+='entries.append( layer%s )'%(str(x))
+            else:
+                instruccions+='entries.append( layer%s );'%(str(x))
+        print instruccions
+        exec(instruccions)
+        print expresion
+        calc = QgsRasterCalculator(expresion,
+                            self.ruta_salida+'\\'+'suma_ponderada.tif',
+                            'GTiff',
+                            self.imported_layer.extent(),
+                            self.raster_years_layers[0].width(),
+                            self.raster_years_layers[0].height(),
+                            entries )
+
+        calc.processCalculation()
+        print "ponderada"
+        rasterLyr = QgsRasterLayer(self.ruta_salida+'\\'+'suma_ponderada.tif', "suma_ponderada")
+        self.raster_layer_ws=self.ruta_salida+'\\'+'suma_ponderada.tif'
+        QgsMapLayerRegistry.instance().addMapLayers([rasterLyr])
+
+    def vectorize(self):
+        processing.runalg("gdalogr:polygonize",self.raster_layer_ws,"DN",self.ruta_salida+'\\'+'suma_vectorizada.shp')
+        self.vectorized_sum = self.ruta_salida+'\\'+'suma_vectorizada.shp'
+        capa_shape = QgsVectorLayer(self.vectorized_sum, "suma_vectorizada" ,"ogr")
+        QgsMapLayerRegistry.instance().addMapLayers([capa_shape])
 
     def main(self):
         self.csv_to_shape()  # import the csvfile stores it and export to shp
         self.export_by_date()  # export a shp for every year
         self.kernel_gausiano()
+        self.weighted_sum()
+        self.vectorize()
 ##        sef.calc_radio()
 
 
