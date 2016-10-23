@@ -311,6 +311,8 @@ class GisGrimeFocus:
             d = QgsDistanceArea()
             m = d.measureLine(pt,ftr.geometry().asPoint())
             distances.append(m)
+        self.crime_distances.append(self.mean(distances))
+        self.crime_sd.append(self.pstdev(distances))
         return self.pstdev(distances) ,self.mean(distances)
 
 ##        print "el promedio de las distancias es : %s m" %(str(sum(distances)/len(distances)))
@@ -323,7 +325,7 @@ class GisGrimeFocus:
             sd,avr = self.calc_radio(layer)
 ##            print layer.name() , str(avr) , str(sd)
             if self.dlg.rb_default_bw.isChecked() is True:
-                radio =avr + 2*sd
+                radio =avr + 1*sd
             else:
                 radio =self.dlg.dsb_bandwith.value()
             print radio
@@ -359,21 +361,35 @@ class GisGrimeFocus:
         layer = self.imported_layer
         ruta_exporta = self.ruta_salida
         for an in anios:
-            layer_anio = self.feature_export(layer,"PERIODO",an)
+            layer_anio = self.feature_export(layer,"PERIODO",an,"")
             self.years_layers.append(self.layer_export(layer_anio,ruta_exporta))
             del layer_anio
 
-    def feature_export(self,layer_origen,campo,dato):
+    def feature_export(self,layer_origen,campo,dato,expression):
         #captura el sistema de coordenadas del primer layer que este cargado en el qgis
         layers = self.iface.legendInterface().layers()
         coord_layer = layers[0].crs()
         layer_crs = coord_layer.authid()
-        coordenadas = "Point?crs=%s" % layer_crs
-        layer_virtual = QgsVectorLayer(coordenadas, dato, "memory")# crea un layer virtual asignando el sistema de coordenadas del primer layer que este cargado en el qgis
-        layer_virtual.startEditing()#comienza la edicion
-        layer_virtual.dataProvider().addAttributes(list(layer_origen.dataProvider().fields()))#le añade los campos del layer origen
+        if layers[0].geometryType() == QGis.Point:
+            coordenadas = "Point?crs=%s" % layer_crs
+        elif layers[0].geometryType() == QGis.Polygon:
+            coordenadas = "Polygon?crs=%s" % layer_crs
+
+##        layer_virtual = QgsVectorLayer(coordenadas, dato, "memory")# crea un layer virtual asignando el sistema de coordenadas del primer layer que este cargado en el qgis
+##        layer_virtual.startEditing()#comienza la edicion
+##        layer_virtual.dataProvider().addAttributes(list(layer_origen.dataProvider().fields()))#le añade los campos del layer origen
 ##        features_origen=layer_origen.dataProvider().getFeatures(QgsFeatureRequest().setFilterExpression('"'+campo+'" = '+"'"+dato+"'"))# trae las features que solo cumplen las condiciones del filtro
-        features_origen=layer_origen.dataProvider().getFeatures(QgsFeatureRequest().setFilterExpression('"'+campo+'" = '+dato))# trae las features que solo cumplen las condiciones del filtro
+        if expression == "":
+            layer_virtual = QgsVectorLayer(coordenadas, dato, "memory")# crea un layer virtual asignando el sistema de coordenadas del primer layer que este cargado en el qgis
+            layer_virtual.startEditing()#comienza la edicion
+            layer_virtual.dataProvider().addAttributes(list(layer_origen.dataProvider().fields()))#le añade los campos del layer origen
+            features_origen=layer_origen.dataProvider().getFeatures(QgsFeatureRequest().setFilterExpression('"'+campo+'" = '+dato))# trae las features que solo cumplen las condiciones del filtro
+        else:
+            layer_virtual = QgsVectorLayer(coordenadas, "DN_%s"%str(dato), "memory")# crea un layer virtual asignando el sistema de coordenadas del primer layer que este cargado en el qgis
+            layer_virtual.startEditing()#comienza la edicion
+            layer_virtual.dataProvider().addAttributes(list(layer_origen.dataProvider().fields()))#le añade los campos del layer origen
+            features_origen=layer_origen.dataProvider().getFeatures(QgsFeatureRequest().setFilterExpression('"'+campo+'" >= '+str(dato)))# trae las features que solo cumplen las condiciones del filtro
+
         for feature in features_origen:# almacena las features capturadas en el layer virtual
             layer_virtual.dataProvider().addFeatures([feature])
         #guarda los cambios
@@ -381,6 +397,7 @@ class GisGrimeFocus:
         layer_virtual.updateFields()
         layer_virtual.updateExtents()
         return layer_virtual # devuelve el layer virtual
+
 
     def load_fields(self):# funci{on que cambias los atributos al cambiar de layer
         layer= self.dlg.mcb_lista_csv.currentLayer ()
@@ -435,7 +452,7 @@ class GisGrimeFocus:
         #activa el radio button de la seleccion aleatoria por numero de elementos al cambiar los valores del spinbox
         self.dlg.rb_custom_bw.toggle()
 
-    def get_natural_breaks():
+    def get_natural_breaks(data,klass):
         pass
 
     def weighted_sum(self):
@@ -480,13 +497,23 @@ class GisGrimeFocus:
         self.vectorized_sum = self.ruta_salida+'\\'+'suma_vectorizada.shp'
         capa_shape = QgsVectorLayer(self.vectorized_sum, "suma_vectorizada" ,"ogr")
         QgsMapLayerRegistry.instance().addMapLayers([capa_shape])
+        return capa_shape
+
+    def select_critics(self,layer):
+        expresion = ""
+        layer_select1 = self.feature_export(layer_sel,"DN",str(38),"y")
+        QgsMapLayerRegistry.instance().addMapLayers([layer_select1])
+
 
     def main(self):
         self.csv_to_shape()  # import the csvfile stores it and export to shp
         self.export_by_date()  # export a shp for every year
         self.kernel_gausiano()
         self.weighted_sum()
-        self.vectorize()
+        layer_sel = self.vectorize()
+        self.select_critics(layer_sel)
+
+##               layer_anio = self.feature_export(layer,"PERIODO",an,"")
 ##        sef.calc_radio()
 
 
