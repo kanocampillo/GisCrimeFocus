@@ -63,6 +63,7 @@ class GisGrimeFocus:
         self.crime_distances = []
         self.crime_sd = []
         self.crime_radios = []
+        self.added_layers = []
 
 
         # Save reference to the QGIS interface
@@ -190,7 +191,6 @@ class GisGrimeFocus:
 
         #funcionque conecta al boton con la funcion de convertir el scv en shape
         #  y cargarlo
-##        self.dlg.pBImport.clicked.connect(self.csv_to_shape)
         self.dlg.pBImport.clicked.connect(self.main)
 
         self.dlg.mcb_lista_csv.layerChanged.connect(self.load_fields)
@@ -246,15 +246,10 @@ class GisGrimeFocus:
     def readInputData(self):
 
         #abre el dialog para guardar el shape de salida
-##        file = QFileDialog.getOpenFileName(self.dlg, 'Archivo shape de salida' \
-##        ,'', filter='*.csv')
-##
-##        file = QFileDialog.getExistingDirectory(self.dlg, 'Working Path' \
-##                ,'', filter='*.csv')
 
         file = QFileDialog.getExistingDirectory(self.dlg,
          "Choose Or Create Directory","C:\\",
-         QFileDialog.DontResolveSymlinks | QFileDialog.ReadOnly);
+         QFileDialog.DontResolveSymlinks);
         self.dlg.lEIfile.setText(file)
         self.ruta_salida=self.dlg.lEIfile.text()  # set the workspace
 
@@ -270,21 +265,12 @@ class GisGrimeFocus:
          print "hola"
 
     def layer_export(self,capa,ruta_wokspace):# esta funcion convierte un layer visrtual en un shape en un directoriuo dado
-##        dest_crs = QgsCoordinateReferenceSystem(3116)setCrs
         dest_crs =self.dlg.mpsw_crs.crs ()
         QgsVectorFileWriter.writeAsVectorFormat(capa,ruta_wokspace+"\\"+capa.name()+".shp", "utf-8", dest_crs, "ESRI Shapefile")
         capa_shape = QgsVectorLayer(ruta_wokspace+"\\"+capa.name()+".shp", capa.name() ,"ogr")
         capa.commitChanges()
         QgsMapLayerRegistry.instance().addMapLayer(capa_shape)
         return capa_shape
-
-    def layerTomemory(self, ruta, nombre):
-        layer = self.iface.addVectorLayer(ruta, "layer name you like", "memory")
-
-##        lyr = QgsVectorLayer(ruta,nombre, "memory")
-##        QgsMapLayerRegistry.instance().addMapLayers([lyr])
-##        QgsMapLayerRegistry.instance().addMapLayer(lyr)
-
 
     def calc_radio(self,layer):
         distances=[]
@@ -315,7 +301,6 @@ class GisGrimeFocus:
         self.crime_sd.append(self.pstdev(distances))
         return self.pstdev(distances) ,self.mean(distances)
 
-##        print "el promedio de las distancias es : %s m" %(str(sum(distances)/len(distances)))
 
     def kernel_gausiano(self):
         year_count = len(self.years_layers)
@@ -323,7 +308,7 @@ class GisGrimeFocus:
 
             layer = self.years_layers[i]
             sd,avr = self.calc_radio(layer)
-##            print layer.name() , str(avr) , str(sd)
+
             if self.dlg.rb_default_bw.isChecked() is True:
                 radio =avr + 1*sd
             else:
@@ -336,7 +321,7 @@ class GisGrimeFocus:
             rasterLyr = QgsRasterLayer(self.ruta_salida+'//'+layer.name()+".tif", "Ker_"+layer.name())
             self.raster_years_layers.append(rasterLyr)
             QgsMapLayerRegistry.instance().addMapLayers([rasterLyr])
-##        self.getextent()
+
 
     def layer_path(self,layer):
         pvr = layer.dataProvider()
@@ -355,9 +340,7 @@ class GisGrimeFocus:
 
     def export_by_date(self):
         self.years = self.get_years_values()
-##        anios=["2010","2011","2012","2013"]
         anios=self.years
-##        layer=self.iface.activeLayer()
         layer = self.imported_layer
         ruta_exporta = self.ruta_salida
         for an in anios:
@@ -375,10 +358,6 @@ class GisGrimeFocus:
         elif layers[0].geometryType() == QGis.Polygon:
             coordenadas = "Polygon?crs=%s" % layer_crs
 
-##        layer_virtual = QgsVectorLayer(coordenadas, dato, "memory")# crea un layer virtual asignando el sistema de coordenadas del primer layer que este cargado en el qgis
-##        layer_virtual.startEditing()#comienza la edicion
-##        layer_virtual.dataProvider().addAttributes(list(layer_origen.dataProvider().fields()))#le añade los campos del layer origen
-##        features_origen=layer_origen.dataProvider().getFeatures(QgsFeatureRequest().setFilterExpression('"'+campo+'" = '+"'"+dato+"'"))# trae las features que solo cumplen las condiciones del filtro
         if expression == "":
             layer_virtual = QgsVectorLayer(coordenadas, dato, "memory")# crea un layer virtual asignando el sistema de coordenadas del primer layer que este cargado en el qgis
             layer_virtual.startEditing()#comienza la edicion
@@ -476,7 +455,6 @@ class GisGrimeFocus:
                 instruccions+='entries.append( layer%s )'%(str(x))
             else:
                 instruccions+='entries.append( layer%s );'%(str(x))
-        print instruccions
         exec(instruccions)
         print expresion
         calc = QgsRasterCalculator(expresion,
@@ -488,7 +466,6 @@ class GisGrimeFocus:
                             entries )
 
         calc.processCalculation()
-        print "ponderada"
         rasterLyr = QgsRasterLayer(self.ruta_salida+'\\'+'suma_ponderada.tif', "suma_ponderada")
         self.raster_layer_ws=self.ruta_salida+'\\'+'suma_ponderada.tif'
         QgsMapLayerRegistry.instance().addMapLayers([rasterLyr])
@@ -505,7 +482,6 @@ class GisGrimeFocus:
         for f in layer.getFeatures():
 	      dn_values.append(f["DN"])
         jenks_breaks = self.get_natural_breaks(dn_values,5)
-        print jenks_breaks
         expresion = ""
         layer_select1 = self.feature_export(layer,"DN",str(jenks_breaks[2:][0]),"y")
         QgsMapLayerRegistry.instance().addMapLayers([layer_select1])
@@ -527,19 +503,15 @@ class GisGrimeFocus:
         capa_dissolved = QgsVectorLayer(path_layer_diss, "zonas_disueltas" ,"ogr")
         QgsMapLayerRegistry.instance().addMapLayers([capa_dissolved])
 
-        print path_layer_diss
 
         avr_avr = self.mean(self.crime_distances)
         avr_std_desv = self.mean(self.crime_sd)
         buffer_radio = avr_avr + avr_std_desv
 
         processing.runalg("saga:shapesbufferfixeddistance",self.layer_path(capa_dissolved),buffer_radio,1,5,True,False,self.ruta_salida+'//'+layer_critics.name()+"_buff.shp")
-##        processing.runalg("qgis:fixeddistancebuffer",self.layer_path(capa_dissolved),150,5,True,self.ruta_salida+'//'+layer_critics.name()+"_buff.shp")
         path_layer_buff = self.ruta_salida+'//'+layer_critics.name()+"_buff.shp"
         capa_buff = QgsVectorLayer(path_layer_buff, "zonas_buffer" ,"ogr")
         QgsMapLayerRegistry.instance().addMapLayers([capa_buff])
-
-        print path_layer_buff
 
 
         processing.runalg("qgis:multiparttosingleparts",path_layer_buff,self.ruta_salida+'//'+layer_critics.name()+"_multi.shp")
@@ -547,49 +519,15 @@ class GisGrimeFocus:
         capa_multi = QgsVectorLayer(path_layer_multi, "zonas_disueltas_buffer" ,"ogr")
         QgsMapLayerRegistry.instance().addMapLayers([capa_multi])
 
-        print self.years_layers[len(self.years_layers)-1].name()
         processing.runalg("qgis:countpointsinpolygon",path_layer_multi,self.layer_path(self.years_layers[len(self.years_layers)-1]),"NUMPOINTS",self.ruta_salida+'//'+"zonas_criticas.shp")
         path_layer_critic = self.ruta_salida+'//'+"zonas_criticas.shp"
         capa_critica = QgsVectorLayer(path_layer_critic, "Zonas_Criticas" ,"ogr")
         QgsMapLayerRegistry.instance().addMapLayers([capa_critica])
 
-##        processing.runalg("qgis:fixeddistancebuffer","H:/pruebas//DN_10_multi.shp",150,5,True,None)
-##
-
-        print avr_avr
-        print avr_std_desv
-
-##               layer_anio = self.feature_export(layer,"PERIODO",an,"")
-
-##        sef.calc_radio()
-
 
 
     if __name__ == '__main__':
         main()
-
-
-
-
-
-##        for a in uniq_values:
-##            self.dlg.cBValues.addItem(str(a))
-##        distancias=[]
-##        distancias_minimas=[]
-##        mapa = self.iface.mapCanvas()
-##        layer= mapa.currentLayer()
-##        medidor = QgsDistanceArea() # crea el objeto de medicion
-##        for f1 in layer.getFeatures(): # para todos los estudientes
-##             for f2 in layer.getFeatures(): # para todos los colegios
-##                 m = medidor.measureLine(f1.geometry().asPoint(),f2.geometry().asPoint()) # calcula la distancia entre el colegio y el estudiante
-##                 m = medidor.convertMeasurement(m, 2, 0, False) # la convierte en metros a partir de grados decimales
-##                 m = m[0] # obtiene solo el valor de la distancia porque viene así (4545,0)
-##                 distancias.append(m)
-##             distancias_minimas.append(min(distancias))
-##        print distancias_minimas
-
-
-
 
 
 
