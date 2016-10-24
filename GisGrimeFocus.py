@@ -332,8 +332,8 @@ class GisGrimeFocus:
             cell_size = self.dlg.dsb_cellsize.value()
             ruta = self.layer_path(layer)
             extent = self.get_extent()
-            processing.runalg("saga:kerneldensityestimation",ruta,"Delito",radio,1,extent,cell_size,self.ruta_salida+layer.name()+".tif")
-            rasterLyr = QgsRasterLayer(self.ruta_salida+layer.name()+".tif", "Ker_"+layer.name())
+            processing.runalg("saga:kerneldensityestimation",ruta,"Delito",radio,1,extent,cell_size,self.ruta_salida+'//'+layer.name()+".tif")
+            rasterLyr = QgsRasterLayer(self.ruta_salida+'//'+layer.name()+".tif", "Ker_"+layer.name())
             self.raster_years_layers.append(rasterLyr)
             QgsMapLayerRegistry.instance().addMapLayers([rasterLyr])
 ##        self.getextent()
@@ -452,8 +452,9 @@ class GisGrimeFocus:
         #activa el radio button de la seleccion aleatoria por numero de elementos al cambiar los valores del spinbox
         self.dlg.rb_custom_bw.toggle()
 
-    def get_natural_breaks(data,klass):
-        pass
+    def get_natural_breaks(self,data,num_class):
+        class_intervals=jenks.getJenksBreaks(data,num_class)
+        return class_intervals
 
     def weighted_sum(self):
         entries = []  # stores the enties for the rascalc operation
@@ -500,10 +501,18 @@ class GisGrimeFocus:
         return capa_shape
 
     def select_critics(self,layer):
+        dn_values = []
+        for f in layer.getFeatures():
+	      dn_values.append(f["DN"])
+        jenks_breaks = self.get_natural_breaks(dn_values,5)
+        print jenks_breaks
         expresion = ""
-        layer_select1 = self.feature_export(layer_sel,"DN",str(38),"y")
+        layer_select1 = self.feature_export(layer,"DN",str(jenks_breaks[2:][0]),"y")
         QgsMapLayerRegistry.instance().addMapLayers([layer_select1])
+        return layer_select1
 
+    def select_final_zones(self,layer,value):
+        pass
 
     def main(self):
         self.csv_to_shape()  # import the csvfile stores it and export to shp
@@ -511,9 +520,47 @@ class GisGrimeFocus:
         self.kernel_gausiano()
         self.weighted_sum()
         layer_sel = self.vectorize()
-        self.select_critics(layer_sel)
+        layer_critics = self.select_critics(layer_sel)
+        layer_critics_shape = self.layer_export(layer_critics,self.ruta_salida)
+        processing.runalg("saga:polygondissolveallpolygons",self.layer_path(layer_critics_shape),False,self.ruta_salida+'//'+layer_critics.name()+"_diss.shp")
+        path_layer_diss = self.ruta_salida+'//'+layer_critics.name()+"_diss.shp"
+        capa_dissolved = QgsVectorLayer(path_layer_diss, "zonas_disueltas" ,"ogr")
+        QgsMapLayerRegistry.instance().addMapLayers([capa_dissolved])
+
+        print path_layer_diss
+
+        avr_avr = self.mean(self.crime_distances)
+        avr_std_desv = self.mean(self.crime_sd)
+        buffer_radio = avr_avr + avr_std_desv
+
+        processing.runalg("saga:shapesbufferfixeddistance",self.layer_path(capa_dissolved),buffer_radio,1,5,True,False,self.ruta_salida+'//'+layer_critics.name()+"_buff.shp")
+##        processing.runalg("qgis:fixeddistancebuffer",self.layer_path(capa_dissolved),150,5,True,self.ruta_salida+'//'+layer_critics.name()+"_buff.shp")
+        path_layer_buff = self.ruta_salida+'//'+layer_critics.name()+"_buff.shp"
+        capa_buff = QgsVectorLayer(path_layer_buff, "zonas_buffer" ,"ogr")
+        QgsMapLayerRegistry.instance().addMapLayers([capa_buff])
+
+        print path_layer_buff
+
+
+        processing.runalg("qgis:multiparttosingleparts",path_layer_buff,self.ruta_salida+'//'+layer_critics.name()+"_multi.shp")
+        path_layer_multi = self.ruta_salida+'//'+layer_critics.name()+"_multi.shp"
+        capa_multi = QgsVectorLayer(path_layer_multi, "zonas_disueltas_buffer" ,"ogr")
+        QgsMapLayerRegistry.instance().addMapLayers([capa_multi])
+
+        print self.years_layers[len(self.years_layers)-1].name()
+        processing.runalg("qgis:countpointsinpolygon",path_layer_multi,self.layer_path(self.years_layers[len(self.years_layers)-1]),"NUMPOINTS",self.ruta_salida+'//'+"zonas_criticas.shp")
+        path_layer_critic = self.ruta_salida+'//'+"zonas_criticas.shp"
+        capa_critica = QgsVectorLayer(path_layer_critic, "Zonas_Criticas" ,"ogr")
+        QgsMapLayerRegistry.instance().addMapLayers([capa_critica])
+
+##        processing.runalg("qgis:fixeddistancebuffer","H:/pruebas//DN_10_multi.shp",150,5,True,None)
+##
+
+        print avr_avr
+        print avr_std_desv
 
 ##               layer_anio = self.feature_export(layer,"PERIODO",an,"")
+
 ##        sef.calc_radio()
 
 
