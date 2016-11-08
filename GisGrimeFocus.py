@@ -53,7 +53,7 @@ class GisGrimeFocus:
         """
 
         """ here the global variables"""
-        self.ruta_salida = ""
+        self.output_path = ""
         self.years = []
         self.imported_layer = ""
         self.years_layers =[]
@@ -251,18 +251,18 @@ class GisGrimeFocus:
          "Choose Or Create Directory","C:\\",
          QFileDialog.DontResolveSymlinks);
         self.dlg.lEIfile.setText(file)
-        self.ruta_salida=self.dlg.lEIfile.text()  # set the workspace
+        self.output_path=self.dlg.lEIfile.text()  # set the workspace
 
     def csv_to_shape(self):
          capa_csv = self.dlg.mcb_lista_csv.currentLayer()
          pvr = capa_csv.dataProvider()
          ruta_capa = pvr.dataSourceUri().split("|")[0]
-         ruta_exporta = self.ruta_salida
+         ruta_exporta = self.output_path
          uri = "file:///"+ruta_capa+ \
          "?delimiter=%s&crs=epsg:4326&xField=%s&yField=%s" % (";", "x", "y")
          lyr_capa_csv = QgsVectorLayer(uri, 'Delitosx','delimitedtext')
          self.imported_layer = self.layer_export(lyr_capa_csv,ruta_exporta) # funciona exporta a shape
-         print "hola"
+
 
     def layer_export(self,capa,ruta_wokspace):# esta funcion convierte un layer visrtual en un shape en un directoriuo dado
         dest_crs =self.dlg.mpsw_crs.crs ()
@@ -317,8 +317,8 @@ class GisGrimeFocus:
             cell_size = self.dlg.dsb_cellsize.value()
             ruta = self.layer_path(layer)
             extent = self.get_extent()
-            processing.runalg("saga:kerneldensityestimation",ruta,"Delito",radio,1,extent,cell_size,self.ruta_salida+'//'+layer.name()+".tif")
-            rasterLyr = QgsRasterLayer(self.ruta_salida+'//'+layer.name()+".tif", "Ker_"+layer.name())
+            processing.runalg("saga:kerneldensityestimation",ruta,"Delito",radio,1,extent,cell_size,self.output_path+'//'+layer.name()+".tif")
+            rasterLyr = QgsRasterLayer(self.output_path+'//'+layer.name()+".tif", "Ker_"+layer.name())
             self.raster_years_layers.append(rasterLyr)
             QgsMapLayerRegistry.instance().addMapLayers([rasterLyr])
 
@@ -342,7 +342,7 @@ class GisGrimeFocus:
         self.years = self.get_years_values()
         anios=self.years
         layer = self.imported_layer
-        ruta_exporta = self.ruta_salida
+        ruta_exporta = self.output_path
         for an in anios:
             layer_anio = self.feature_export(layer,"PERIODO",an,"")
             self.years_layers.append(self.layer_export(layer_anio,ruta_exporta))
@@ -458,7 +458,7 @@ class GisGrimeFocus:
         exec(instruccions)
         print expresion
         calc = QgsRasterCalculator(expresion,
-                            self.ruta_salida+'\\'+'suma_ponderada.tif',
+                            self.output_path+'\\'+'suma_ponderada.tif',
                             'GTiff',
                             self.imported_layer.extent(),
                             self.raster_years_layers[0].width(),
@@ -466,13 +466,13 @@ class GisGrimeFocus:
                             entries )
 
         calc.processCalculation()
-        rasterLyr = QgsRasterLayer(self.ruta_salida+'\\'+'suma_ponderada.tif', "suma_ponderada")
-        self.raster_layer_ws=self.ruta_salida+'\\'+'suma_ponderada.tif'
+        rasterLyr = QgsRasterLayer(self.output_path+'\\'+'suma_ponderada.tif', "suma_ponderada")
+        self.raster_layer_ws=self.output_path+'\\'+'suma_ponderada.tif'
         QgsMapLayerRegistry.instance().addMapLayers([rasterLyr])
 
     def vectorize(self):
-        processing.runalg("gdalogr:polygonize",self.raster_layer_ws,"DN",self.ruta_salida+'\\'+'suma_vectorizada.shp')
-        self.vectorized_sum = self.ruta_salida+'\\'+'suma_vectorizada.shp'
+        processing.runalg("gdalogr:polygonize",self.raster_layer_ws,"DN",self.output_path+'\\'+'suma_vectorizada.shp')
+        self.vectorized_sum = self.output_path+'\\'+'suma_vectorizada.shp'
         capa_shape = QgsVectorLayer(self.vectorized_sum, "suma_vectorizada" ,"ogr")
         QgsMapLayerRegistry.instance().addMapLayers([capa_shape])
         return capa_shape
@@ -487,8 +487,6 @@ class GisGrimeFocus:
         QgsMapLayerRegistry.instance().addMapLayers([layer_select1])
         return layer_select1
 
-    def select_final_zones(self,layer,value):
-        pass
 
     def main(self):
         self.csv_to_shape()  # import the csvfile stores it and export to shp
@@ -497,9 +495,9 @@ class GisGrimeFocus:
         self.weighted_sum()
         layer_sel = self.vectorize()
         layer_critics = self.select_critics(layer_sel)
-        layer_critics_shape = self.layer_export(layer_critics,self.ruta_salida)
-        processing.runalg("saga:polygondissolveallpolygons",self.layer_path(layer_critics_shape),False,self.ruta_salida+'//'+layer_critics.name()+"_diss.shp")
-        path_layer_diss = self.ruta_salida+'//'+layer_critics.name()+"_diss.shp"
+        layer_critics_shape = self.layer_export(layer_critics,self.output_path)
+        processing.runalg("saga:polygondissolveallpolygons",self.layer_path(layer_critics_shape),False,self.output_path+'//'+layer_critics.name()+"_diss.shp")
+        path_layer_diss = self.output_path+'//'+layer_critics.name()+"_diss.shp"
         capa_dissolved = QgsVectorLayer(path_layer_diss, "zonas_disueltas" ,"ogr")
         QgsMapLayerRegistry.instance().addMapLayers([capa_dissolved])
 
@@ -508,19 +506,19 @@ class GisGrimeFocus:
         avr_std_desv = self.mean(self.crime_sd)
         buffer_radio = avr_avr + avr_std_desv
 
-        processing.runalg("saga:shapesbufferfixeddistance",self.layer_path(capa_dissolved),buffer_radio,1,5,True,False,self.ruta_salida+'//'+layer_critics.name()+"_buff.shp")
-        path_layer_buff = self.ruta_salida+'//'+layer_critics.name()+"_buff.shp"
+        processing.runalg("saga:shapesbufferfixeddistance",self.layer_path(capa_dissolved),buffer_radio,1,5,True,False,self.output_path+'//'+layer_critics.name()+"_buff.shp")
+        path_layer_buff = self.output_path+'//'+layer_critics.name()+"_buff.shp"
         capa_buff = QgsVectorLayer(path_layer_buff, "zonas_buffer" ,"ogr")
         QgsMapLayerRegistry.instance().addMapLayers([capa_buff])
 
 
-        processing.runalg("qgis:multiparttosingleparts",path_layer_buff,self.ruta_salida+'//'+layer_critics.name()+"_multi.shp")
-        path_layer_multi = self.ruta_salida+'//'+layer_critics.name()+"_multi.shp"
+        processing.runalg("qgis:multiparttosingleparts",path_layer_buff,self.output_path+'//'+layer_critics.name()+"_multi.shp")
+        path_layer_multi = self.output_path+'//'+layer_critics.name()+"_multi.shp"
         capa_multi = QgsVectorLayer(path_layer_multi, "zonas_disueltas_buffer" ,"ogr")
         QgsMapLayerRegistry.instance().addMapLayers([capa_multi])
 
-        processing.runalg("qgis:countpointsinpolygon",path_layer_multi,self.layer_path(self.years_layers[len(self.years_layers)-1]),"NUMPOINTS",self.ruta_salida+'//'+"zonas_criticas.shp")
-        path_layer_critic = self.ruta_salida+'//'+"zonas_criticas.shp"
+        processing.runalg("qgis:countpointsinpolygon",path_layer_multi,self.layer_path(self.years_layers[len(self.years_layers)-1]),"NUMPOINTS",self.output_path+'//'+"zonas_criticas.shp")
+        path_layer_critic = self.output_path+'//'+"zonas_criticas.shp"
         capa_critica = QgsVectorLayer(path_layer_critic, "Zonas_Criticas" ,"ogr")
         QgsMapLayerRegistry.instance().addMapLayers([capa_critica])
 
