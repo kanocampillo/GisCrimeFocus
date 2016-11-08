@@ -64,6 +64,7 @@ class GisGrimeFocus:
         self.crime_sd = []
         self.crime_radios = []
         self.added_layers = []
+        self.progressValue=0
 
 
         # Save reference to the QGIS interface
@@ -321,6 +322,7 @@ class GisGrimeFocus:
             rasterLyr = QgsRasterLayer(self.output_path+'//'+layer.name()+".tif", "Ker_"+layer.name())
             self.raster_years_layers.append(rasterLyr)
             QgsMapLayerRegistry.instance().addMapLayers([rasterLyr])
+            self.increment(5)
 
 
     def layer_path(self,layer):
@@ -487,40 +489,60 @@ class GisGrimeFocus:
         QgsMapLayerRegistry.instance().addMapLayers([layer_select1])
         return layer_select1
 
+    def increment(self, value):
+        self.progressValue+=value
+        self.dlg.progressBar.setValue(self.progressValue)
 
     def main(self):
+        self.progressValue=0
+        self.dlg.progressBar.setValue(0)
+        self.dlg.lbl_progress.setText("Convirtiendo a shapefile")
         self.csv_to_shape()  # import the csvfile stores it and export to shp
+        self.increment(10)
+        self.dlg.lbl_progress.setText("Exportando cada fecha a shapefile")
         self.export_by_date()  # export a shp for every year
+        self.increment(10)
+        self.dlg.lbl_progress.setText("Calculando el kernel gausiano")
         self.kernel_gausiano()
+
+        self.dlg.lbl_progress.setText("Calculando la suma ponderada")
         self.weighted_sum()
+        self.increment(10)
+        self.dlg.lbl_progress.setText("Vectorizando")
         layer_sel = self.vectorize()
         layer_critics = self.select_critics(layer_sel)
         layer_critics_shape = self.layer_export(layer_critics,self.output_path)
+        self.dlg.lbl_progress.setText("Ejecutando el dissolve")
         processing.runalg("saga:polygondissolveallpolygons",self.layer_path(layer_critics_shape),False,self.output_path+'//'+layer_critics.name()+"_diss.shp")
         path_layer_diss = self.output_path+'//'+layer_critics.name()+"_diss.shp"
         capa_dissolved = QgsVectorLayer(path_layer_diss, "zonas_disueltas" ,"ogr")
         QgsMapLayerRegistry.instance().addMapLayers([capa_dissolved])
-
+        self.increment(10)
 
         avr_avr = self.mean(self.crime_distances)
         avr_std_desv = self.mean(self.crime_sd)
         buffer_radio = avr_avr + avr_std_desv
-
+        self.dlg.lbl_progress.setText("Calculando el buffer")
         processing.runalg("saga:shapesbufferfixeddistance",self.layer_path(capa_dissolved),buffer_radio,1,5,True,False,self.output_path+'//'+layer_critics.name()+"_buff.shp")
         path_layer_buff = self.output_path+'//'+layer_critics.name()+"_buff.shp"
         capa_buff = QgsVectorLayer(path_layer_buff, "zonas_buffer" ,"ogr")
         QgsMapLayerRegistry.instance().addMapLayers([capa_buff])
+        self.increment(10)
 
-
+        self.dlg.lbl_progress.setText("Convirtiendo a multipartes")
         processing.runalg("qgis:multiparttosingleparts",path_layer_buff,self.output_path+'//'+layer_critics.name()+"_multi.shp")
         path_layer_multi = self.output_path+'//'+layer_critics.name()+"_multi.shp"
         capa_multi = QgsVectorLayer(path_layer_multi, "zonas_disueltas_buffer" ,"ogr")
         QgsMapLayerRegistry.instance().addMapLayers([capa_multi])
-
+        self.increment(10)
+        self.dlg.lbl_progress.setText("Calculando el numero de casos por area")
         processing.runalg("qgis:countpointsinpolygon",path_layer_multi,self.layer_path(self.years_layers[len(self.years_layers)-1]),"NUMPOINTS",self.output_path+'//'+"zonas_criticas.shp")
         path_layer_critic = self.output_path+'//'+"zonas_criticas.shp"
         capa_critica = QgsVectorLayer(path_layer_critic, "Zonas_Criticas" ,"ogr")
         QgsMapLayerRegistry.instance().addMapLayers([capa_critica])
+        self.increment(10)
+        self.dlg.lbl_progress.setText("Proceso finalizado con exito")
+        self.increment(10)
 
 
 
