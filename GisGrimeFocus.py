@@ -192,9 +192,10 @@ class GisGrimeFocus:
 
         #funcionque conecta al boton con la funcion de convertir el scv en shape
         #  y cargarlo
-        self.dlg.pBImport.clicked.connect(self.main)
+        self.dlg.pBImport.clicked.connect(self.validations)
 
         self.dlg.mcb_lista_csv.layerChanged.connect(self.load_fields)
+        self.dlg.pb_clean.clicked.connect(self.clean)
 
         # funcion que habilita el radio buton de numero de features al seleccionar
         # el cuadro de cifras
@@ -249,7 +250,7 @@ class GisGrimeFocus:
         #abre el dialog para guardar el shape de salida
 
         file = QFileDialog.getExistingDirectory(self.dlg,
-         "Choose Or Create Directory","C:\\",
+         "Escoge un folder","C:\\",
          QFileDialog.DontResolveSymlinks);
         self.dlg.lEIfile.setText(file)
         self.output_path=self.dlg.lEIfile.text()  # set the workspace
@@ -258,7 +259,8 @@ class GisGrimeFocus:
          capa_csv = self.dlg.mcb_lista_csv.currentLayer()
          pvr = capa_csv.dataProvider()
          ruta_capa = pvr.dataSourceUri().split("|")[0]
-         ruta_exporta = self.output_path
+         self.output_path=self.dlg.lEIfile.text()  # set the workspace
+         ruta_exporta = self.dlg.lEIfile.text()
          uri = "file:///"+ruta_capa+ \
          "?delimiter=%s&crs=epsg:4326&xField=%s&yField=%s" % (";", "x", "y")
          lyr_capa_csv = QgsVectorLayer(uri, 'Delitosx','delimitedtext')
@@ -492,6 +494,30 @@ class GisGrimeFocus:
     def increment(self, value):
         self.progressValue+=value
         self.dlg.progressBar.setValue(self.progressValue)
+
+    def clean(self):
+        self.dlg.mpsw_crs.setCrs(QgsCoordinateReferenceSystem(3116))
+        self.dlg.lEIfile.clear()
+        self.dlg.mcb_lista_csv.clear()
+        self.dlg.mfcb_fields.clear()
+        self.dlg.dsb_bandwith.setValue(10)
+        self.dlg.dsb_cellsize.setValue(10)
+        self.progressValue=0
+        self.dlg.progressBar.setValue(0)
+
+    def validations(self):
+        self.texto_mensajes="Por favor verifique los siguientes mensajes: \n"
+        if not os.path.isdir(str(self.dlg.lEIfile.text())):
+            self.texto_mensajes+=' Por favor seleeccione un folder de salida existente \n'
+
+        if self.texto_mensajes!="Por favor verifique los siguientes mensajes: \n":
+            QMessageBox.information(self.dlg, "Error", self.texto_mensajes)
+        else:
+             # si todo esta bien ejecuta la funcion principal
+             self.main()
+        self.texto_mensajes=""
+
+
 
     def main(self):
         self.progressValue=0
