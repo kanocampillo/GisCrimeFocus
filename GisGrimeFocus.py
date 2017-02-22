@@ -517,6 +517,24 @@ class GisGrimeFocus:
              self.main()
         self.texto_mensajes=""
 
+    def remove_layers(self):
+        layers_aux=[]
+        layers = self.iface.legendInterface().layers()
+        for layer in layers:
+        	if layer.name() != "Zonas_Criticas":
+        		layers_aux.append(layer.id())
+
+        for id in layers_aux:
+        	QgsMapLayerRegistry.instance().removeMapLayer(id)
+
+    def applyGraduatedSymbology(self,vectorLayer, targetField, classes, mode):
+        print 'applying graduated symbology'
+        symbol =  QgsFillSymbolV2()
+        colorRamp = QgsVectorGradientColorRampV2.create({'color1' : '0,217,255,255',
+                                                         'color2' : '255,0,0,255',
+                                                         'stops' : '0.5;255,255,0,255'})
+        renderer = QgsGraduatedSymbolRendererV2.createRenderer(vectorLayer, targetField, classes, mode, symbol, colorRamp)
+        vectorLayer.setRendererV2(renderer)
 
 
     def main(self):
@@ -566,6 +584,14 @@ class GisGrimeFocus:
         path_layer_critic = self.output_path+'//'+"zonas_criticas.shp"
         capa_critica = QgsVectorLayer(path_layer_critic, "Zonas_Criticas" ,"ogr")
         QgsMapLayerRegistry.instance().addMapLayers([capa_critica])
+        self.remove_layers()
+        ranges = []
+        layer = self.iface.legendInterface().layers()[0]
+        field = 'NUMPOINTS'
+        renderer = QgsGraduatedSymbolRendererV2(field, ranges)
+        layer.setRendererV2(renderer)
+        self.applyGraduatedSymbology(layer, field, 3, QgsGraduatedSymbolRendererV2.Jenks)
+        self.iface.mapCanvas().refreshAllLayers()
         self.increment(10)
         self.dlg.lbl_progress.setText("Proceso finalizado con exito")
         self.increment(10)
