@@ -8,7 +8,7 @@ Este es un plugin para Qgis solo descargar y ubicar en el directorio de plugins 
 
 ### Prerequisitos
 
-Tener QGIS intalado. 
+Tener QGIS instalado. 
 
 ```
 Acepta versiones desde la 2.6 en adelante. 
