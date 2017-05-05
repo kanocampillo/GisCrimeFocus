@@ -1,0 +1,15 @@
+
+Por favor cargue directamente el archivo a qgis
+##################################################
+
+por favor usar como campo de año el campo periodo
+##################################################
+
+Se recomienda dejar el valor de acho de banda por defecto
+##################################################
+
+Se recomienda dejar el sistema coordenado por defecto
+##################################################
+
+Se recomienda seleccionar un tamaño de celda de 100
+##################################################
